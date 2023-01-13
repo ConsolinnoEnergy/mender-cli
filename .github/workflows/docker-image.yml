@@ -1,0 +1,32 @@
+name: Docker Image CI
+
+on:
+  push:
+    tags:
+      - 1.*
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: docker-login
+      env:
+        DOCKER_USER: ${{secrets.DOCKER_USER}}
+        DOCKER_PASSWORD: ${{secrets.DOCKER_PASSWORD}}
+      run: |
+        docker login -u $DOCKER_USER -p $DOCKER_PASSWORD
+    - name: Get current tag
+      id: get-current-tag
+      uses: zingimmick/github-action-get-current-tag@v1
+    - name: Build the Docker image
+      env:
+        DOCKER_USER: ${{secrets.DOCKER_USER}}
+      run: docker build . --file Dockerfile -t $DOCKER_USER/${GITHUB_REPOSITORY#*/}:${{steps.get-current-tag.outputs.tag}}
+    - name: Docker push
+      env:
+        DOCKER_USER: ${{secrets.DOCKER_USER}}
+      run: docker push $DOCKER_USER/${GITHUB_REPOSITORY#*/}:${{steps.get-current-tag.outputs.tag}}
